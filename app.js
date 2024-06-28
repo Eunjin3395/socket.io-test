@@ -6,6 +6,7 @@ const { join } = require("node:path");
 const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const axios = require("axios");
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +60,29 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   console.log("a user connected, memberId:", socket.memberId);
+
+  // Socket connection이 생성되면 localhost:8080/v1/member/friends로 GET 요청을 보냅니다.
+  axios
+    .get("http://localhost:8080/v1/member/friends", {
+      headers: {
+        Authorization: `Bearer ${socket.handshake.headers["authorization"].split(" ")[1]}`,
+      },
+    })
+    .then((response) => {
+      if (response.data.isSuccess) {
+        const friends = response.data.result.friendInfoDtoList;
+        friends.forEach((friend) => {
+          console.log(`Friend ID: ${friend.memberId}, Name: ${friend.name}`);
+        });
+        // 필요한 경우, 클라이언트에 데이터를 전송할 수 있습니다.
+        //socket.emit("friends data", friends);
+      } else {
+        console.log("Failed to fetch friends:", response.data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching friends data:", error);
+    });
 
   socket.on("chat message", (msg) => {
     io.emit("chat message", msg);

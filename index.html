@@ -11,26 +11,36 @@
       <input id="input" autocomplete="off" />
       <button>Send</button>
     </form>
+    <input id="userId" type="number" placeholder="Enter your ID" />
     <button id="loginButton">Login</button>
     <button id="authButton">Connect</button>
+    <button id="getSocketListButton">get socket list on express</button>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let socket;
       const form = document.getElementById("form");
       const input = document.getElementById("input");
+      const userIdInput = document.getElementById("userId");
       const loginButton = document.getElementById("loginButton");
       const authButton = document.getElementById("authButton");
+      const getSocketListButton = document.getElementById("getSocketListButton");
 
       let jwtToken = "";
 
       loginButton.addEventListener("click", () => {
+        const userId = userIdInput.value;
+        if (!userId) {
+          alert("Please enter your ID.");
+          return;
+        }
+
         fetch("http://localhost:8080/v1/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id: 1,
+            id: userId,
             loginType: "KAKAO",
           }),
         })
@@ -81,6 +91,11 @@
                 const item = document.createElement("li");
                 item.textContent = msg;
                 document.getElementById("messages").appendChild(item);
+              });
+
+              getSocketListButton.addEventListener("click", (e) => {
+                //e.preventDefault();
+                socket.emit("printSocketIds");
               });
             } else {
               alert("Authentication failed");

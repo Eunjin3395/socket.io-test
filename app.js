@@ -16,6 +16,18 @@ const io = socketIo(server);
 const base64Secret = "secretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecretsecret";
 const jwtSecret = Buffer.from(base64Secret, "base64");
 
+// 연결된 모든 소켓의 socketId 출력하기
+function printConnectedSocketIds() {
+  const connectedSockets = io.sockets.sockets;
+  // console.log(connectedSockets);
+  console.log("==================== socket connections START ====================");
+  connectedSockets.forEach((socket, key) => {
+    console.log(`Socket ID: ${key}`);
+    console.log(`member ID: ${socket.memberId}`);
+  });
+  console.log("==================== socket connections END ====================");
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -59,9 +71,10 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("a user connected, memberId:", socket.memberId);
+  console.log("a user connected, memberId:", socket.memberId, "socketId:", socket.id);
+  let friendIdList = [];
 
-  // Socket connection이 생성되면 localhost:8080/v1/member/friends로 GET 요청을 보냅니다.
+  // Socket connection이 생성되면 localhost:8080/v1/member/friends로 GET 요청
   axios
     .get("http://localhost:8080/v1/member/friends", {
       headers: {
@@ -71,18 +84,34 @@ io.on("connection", (socket) => {
     .then((response) => {
       if (response.data.isSuccess) {
         const friends = response.data.result.friendInfoDtoList;
+        console.log(`== member ID: ${socket.memberId}, friend's member ID & Name list START ==`);
         friends.forEach((friend) => {
           console.log(`Friend ID: ${friend.memberId}, Name: ${friend.name}`);
+          friendIdList.push(friend.memberId);
         });
-        // 필요한 경우, 클라이언트에 데이터를 전송할 수 있습니다.
-        //socket.emit("friends data", friends);
+        console.log(`== member ID: ${socket.memberId}, friend's member ID & Name list END ==`);
       } else {
         console.log("Failed to fetch friends:", response.data.message);
       }
+
+      console.log(`== member ID: ${socket.memberId}, friend's socket ID list START ==`);
+      let connectedSockets = io.sockets.sockets;
+      connectedSockets.forEach((connSocket, key) => {
+        if (friendIdList.includes(connSocket.memberId)) {
+          console.log(`MemberId: ${connSocket.memberId}, Key: ${key}`);
+        }
+      });
+      console.log(`== member ID: ${socket.memberId}, friend's socket ID list END ==`);
     })
     .catch((error) => {
       console.error("Error fetching friends data:", error);
     });
+
+  // socket event listeners
+
+  socket.on("printSocketIds", () => {
+    printConnectedSocketIds();
+  });
 
   socket.on("chat message", (msg) => {
     io.emit("chat message", msg);

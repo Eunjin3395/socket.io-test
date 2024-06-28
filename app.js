@@ -83,6 +83,7 @@ io.on("connection", (socket) => {
     })
     .then((response) => {
       if (response.data.isSuccess) {
+        // 친구 목록 출력 및 friendIdList에 저장
         const friends = response.data.result.friendInfoDtoList;
         console.log(`== member ID: ${socket.memberId}, friend's member ID & Name list START ==`);
         friends.forEach((friend) => {
@@ -94,11 +95,13 @@ io.on("connection", (socket) => {
         console.log("Failed to fetch friends:", response.data.message);
       }
 
+      // 현재 socket 커넥션을 가진 친구 목록 출력 및 해당 socket 커넥션에 "friend-online" event를 emit
       console.log(`== member ID: ${socket.memberId}, friend's socket ID list START ==`);
       let connectedSockets = io.sockets.sockets;
       connectedSockets.forEach((connSocket, key) => {
         if (friendIdList.includes(connSocket.memberId)) {
           console.log(`MemberId: ${connSocket.memberId}, Key: ${key}`);
+          io.to(key).emit("friend-online", socket.memberId);
         }
       });
       console.log(`== member ID: ${socket.memberId}, friend's socket ID list END ==`);

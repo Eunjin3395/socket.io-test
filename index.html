@@ -15,6 +15,8 @@
     <button id="loginButton">Login</button>
     <button id="authButton">Connect</button>
     <button id="getSocketListButton">get socket list on express</button>
+    <ul id="onlineFriends"></ul>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let socket;
@@ -24,6 +26,7 @@
       const loginButton = document.getElementById("loginButton");
       const authButton = document.getElementById("authButton");
       const getSocketListButton = document.getElementById("getSocketListButton");
+      const onlineFriends = document.getElementById("onlineFriends");
 
       let jwtToken = "";
 
@@ -96,6 +99,13 @@
               getSocketListButton.addEventListener("click", (e) => {
                 //e.preventDefault();
                 socket.emit("printSocketIds");
+              });
+
+              // "friend-online" 이벤트 리스너 추가
+              socket.on("friend-online", (memberId) => {
+                const item = document.createElement("li");
+                item.textContent = `Friend ID: ${memberId} is online`;
+                onlineFriends.appendChild(item);
               });
             } else {
               alert("Authentication failed");
